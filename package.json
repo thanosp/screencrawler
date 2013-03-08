@@ -1,0 +1,11 @@
+{
+	"author": "thanosp",
+	"name":	"screencrawler",
+	"version": "0.1.0",
+	"main": "app.js",
+	"dependencies": {
+		"phantom": "*",
+		"crawlstream": "*",
+		"underscore": "1.4.4"
+	}
+}
