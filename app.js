@@ -1,6 +1,8 @@
+#!/usr/bin/env node
+
+var express = require('express');
 var crawlstream = require('crawlstream');
 var phantom = require('phantom');
-var em = require('events').EventEmitter;
 var _ = require('underscore');
 
 var home = 'http://www.in.gr';
@@ -10,6 +12,19 @@ var urlDb = [];
 var urlsToDo = [];
 var urlsInProgress = [];
 var urlsComplete = [];
+
+var initApp = function () {
+	var app = express();
+
+	app.get('/', function(req, res){
+	    res.send('hello world');
+		//initCrawl();
+	});
+
+	app.listen(3000);
+}
+
+initApp();
 
 var getNextPage = function () {
 	var nextPage = null;
@@ -42,7 +57,7 @@ var createNextPage = function () {
 	phantom.create(function(ph) {
 		ph.createPage(function (page) {
 			page.open(url, function (status) {
-				var imagePath = imageDir + '/' + (_.size(urlsComplete) + 1) + '.png';
+				var imagePath = imageDir + '/' + (urlsComplete.length + 1) + '.png';
 				page.render(imagePath);
 				console.log('created', imagePath, 'for', url);
 				urlsInProgress = _.difference(urlsInProgress, [url]);
@@ -52,16 +67,19 @@ var createNextPage = function () {
 		});	
 	});
 	process.nextTick(createNextPage);
-};
+}
 
-setInterval(function() { process.nextTick(createNextPage); }, 300);
 
-crawlstream(home, 2)
-	.on('data', function(req) {
-		var url = req.uri.protocol + '//' + req.uri.hostname + req.uri.path;
+var initCrawl = function () {
+	setInterval(function() { process.nextTick(createNextPage); }, 300);
 
-		if (urlDb.indexOf(url) === -1) {
-			urlDb.push(url);
-			urlsToDo.push(url);
-		}
-	});
+	crawlstream(home, 2)
+		.on('data', function(req) {
+			var url = req.uri.protocol + '//' + req.uri.hostname + req.uri.path;
+
+			if (urlDb.indexOf(url) === -1) {
+				urlDb.push(url);
+				urlsToDo.push(url);
+			}
+		});
+}
