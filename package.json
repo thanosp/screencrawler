@@ -4,6 +4,7 @@
 	"version": "0.1.0",
 	"main": "app.js",
 	"dependencies": {
+		"ejs": "*",
 		"express": "*",
 		"phantom": "*",
 		"crawlstream": "*",

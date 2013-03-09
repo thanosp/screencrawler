@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 
 var express = require('express');
+var ejs = require('ejs');
 var crawlstream = require('crawlstream');
 var phantom = require('phantom');
 var _ = require('underscore');
 
 var home = 'http://www.in.gr';
 var imageDir = './images';
+
+var maxCrawlWorkers = 3;
 
 var urlDb = [];
 var urlsToDo = [];
@@ -16,9 +19,13 @@ var urlsComplete = [];
 var initApp = function () {
 	var app = express();
 
-	app.get('/', function(req, res){
-	    res.send('hello world');
-		//initCrawl();
+	app.get('/', function(req, res) {
+		console.log(req.query);
+		if (req.query.url) {
+			home = req.query.url;
+			initCrawl();
+		}
+		res.render('index.ejs');
 	});
 
 	app.listen(3000);
@@ -30,7 +37,7 @@ var getNextPage = function () {
 	var nextPage = null;
 
 	// stop if busy
-	if (urlsInProgress.length > 0) {
+	if (urlsInProgress.length >= maxCrawlWorkers) {
 		return nextPage;
 	}
 
@@ -72,6 +79,8 @@ var createNextPage = function () {
 
 var initCrawl = function () {
 	setInterval(function() { process.nextTick(createNextPage); }, 300);
+
+	console.log('home:', home);
 
 	crawlstream(home, 2)
 		.on('data', function(req) {
