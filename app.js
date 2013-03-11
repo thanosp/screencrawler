@@ -2,14 +2,16 @@
 
 var express = require('express');
 var ejs = require('ejs');
+var fs = require('fs');
 var crawlstream = require('crawlstream');
 var phantom = require('phantom');
 var _ = require('underscore');
+var util = require('util');
 
 var home = 'http://www.in.gr';
-var imageDir = './images';
+var imageDir = __dirname + '/images';
 
-var maxCrawlWorkers = 3;
+var maxCrawlWorkers = 1;
 
 var urlDb = [];
 var urlsToDo = [];
@@ -19,8 +21,9 @@ var urlsComplete = [];
 var initApp = function () {
 	var app = express();
 
+	app.use("/images", express.static(imageDir));
+
 	app.get('/', function(req, res) {
-		console.log(req.query);
 		if (req.query.url) {
 			home = req.query.url;
 			initCrawl();
@@ -28,6 +31,27 @@ var initApp = function () {
 		res.render('index.ejs');
 	});
 
+	app.get('/status', function(req, res) {
+		res.send(
+			util.format(
+				'urlsToDo: %d, urlsInProgress: %d, urlsComplete: %d',
+				urlsToDo.length,
+				urlsInProgress.length,
+				urlsComplete.length
+			)
+		);
+	});
+
+	// show the last image
+	app.get('/status/image', function(req, res) {
+		var response = '';
+		if (urlsComplete.length > 0) {
+			var url = _.last(urlsComplete);
+			response = { url: url, path: urlToImagePath(urlsComplete.length, url) };
+		}
+		res.send(JSON.stringify(response));
+	});
+ 
 	app.listen(3000);
 }
 
@@ -64,7 +88,8 @@ var createNextPage = function () {
 	phantom.create(function(ph) {
 		ph.createPage(function (page) {
 			page.open(url, function (status) {
-				var imagePath = imageDir + '/' + (urlsComplete.length + 1) + '.png';
+				var fileId = urlsComplete.length + 1;
+				imagePath = imageDir + '/' + urlToImagePath(fileId, url);
 				page.render(imagePath);
 				console.log('created', imagePath, 'for', url);
 				urlsInProgress = _.difference(urlsInProgress, [url]);
@@ -74,6 +99,16 @@ var createNextPage = function () {
 		});	
 	});
 	process.nextTick(createNextPage);
+}
+
+var urlToImagePath = function (fileId, url) {
+	var filename = url
+		.replace(/\/$/, '') // trim trailing slashes
+		.replace(/http(s)?\:\/\//ig, '') // trim protocol
+		.replace(/[\/\\]+/ig, '-') // turn slashes into dashes
+		.replace(/[^a-z\-\.0-9]+/ig, '.'); // replace fs unsafe chars with dots
+	var imagePath = fileId + '-' + filename +'.png';
+	return imagePath;
 }
 
 

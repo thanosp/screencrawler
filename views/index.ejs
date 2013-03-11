@@ -1,4 +1,36 @@
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" ></script>
 <form method="get">
 <input name="url" placeholder="starting url" />
 <input type=submit />
 </form>
+
+<div id="job_status">
+</div>
+
+<div id="last_image">
+</div>
+
+<script>
+$(document).ready(function(){
+	var updateStatus = function() {
+		$.get('/status').always(function (data) {
+			$('#job_status').html(data);
+			setTimeout(updateStatus, 3000);
+		});	
+	}
+
+	var updateLastImage = function() {
+		$.get('/status/image').done(function (data) {
+			var image = JSON.parse(data);
+			if (image) {
+				var imageHtml = '<div>' +image.url + '</div><img src="/images/'+ image.path + '" style="width: 500px:display:block;"/>';	
+				$('#last_image').html(imageHtml);
+			}
+			setTimeout(updateLastImage, 5000);
+		});
+	}
+
+	setTimeout(updateStatus, 3000);
+	setTimeout(updateLastImage, 5000)
+});
+</script>
